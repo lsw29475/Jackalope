@@ -20,25 +20,32 @@ limitations under the License.
 #include "windows.h"
 #endif
 
-class SharedMemory {
+class SharedMemory
+{
 public:
-  SharedMemory();
-  SharedMemory(char* name, size_t size);
-  ~SharedMemory();
+    SharedMemory();
+    SharedMemory(char *name, size_t size);
+    ~SharedMemory();
 
-  void Open(char* name, size_t size);
-  void Close();
+    void Open(char *name, size_t size);
+    void Close();
 
-  size_t GetSize() { return size; }
-  unsigned char* GetData() { return shm; }
+    size_t GetSize()
+    {
+        return size;
+    }
+    unsigned char *GetData()
+    {
+        return shm;
+    }
 
 protected:
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32)
-  HANDLE shm_handle;
+    HANDLE shm_handle;
 #else
-  int fd;
+    int fd;
 #endif
-  char *name;
-  size_t size;
-  unsigned char* shm;
+    char *name;
+    size_t size;
+    unsigned char *shm;
 };
