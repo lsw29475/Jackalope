@@ -148,6 +148,7 @@ protected:
 
 GrammarFuzzer::GrammarFuzzer(const char *grammar_file)
 {
+    //读取语法输入并解析
     if (!grammar.Read(grammar_file))
     {
         FATAL("Error reading grammar");
@@ -189,6 +190,7 @@ void TestGrammar(char *grammar_path)
 {
     Grammar grammar;
     grammar.Read(grammar_path);
+
     PRNG *prng = new MTPRNG();
     Grammar::TreeNode *tree = grammar.GenerateTree("root", prng);
     if (!tree)
@@ -210,6 +212,7 @@ int main(int argc, char **argv)
     char *grammar = GetOption("-test_grammar", argc, argv);
     if (grammar)
     {
+        //进行语法测试
         TestGrammar(grammar);
         return 0;
     }
