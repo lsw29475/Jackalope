@@ -426,6 +426,7 @@ void Fuzzer::SaveSample(ThreadContext *tc, Sample *sample, uint32_t init_timeout
     num_samples++;
     output_mutex.Unlock();
 
+    //创建样本队列项
     SampleQueueEntry *new_entry = new SampleQueueEntry();
     Sample *new_sample = new Sample(*sample);
     new_entry->sample = new_sample;

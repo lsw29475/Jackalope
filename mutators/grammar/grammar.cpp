@@ -268,6 +268,7 @@ Grammar::Symbol *Grammar::GetSymbol(std::string &name)
     }
 }
 
+//检查并输出缺少生成器或是未使用的symbolname
 int Grammar::CheckGrammar()
 {
     int ret = 1;
@@ -287,6 +288,7 @@ int Grammar::CheckGrammar()
     return ret;
 }
 
+//针对所有symbol的生成语法，即生成器进行分析
 void Grammar::AnalyzeGrammar()
 {
     int ret = 1;
@@ -294,14 +296,16 @@ void Grammar::AnalyzeGrammar()
     //对读取的符号进行迭代
     for (auto iter = symbols.begin(); iter != symbols.end(); iter++)
     {
-        //获取每一行symbolname的内容
+        //获取每一行symbolname的详细内容
         Symbol *symbol = iter->second;
         symbol->can_be_empty = 0;
+        //对每一个symbolname的生成语法进行遍历
         for (auto iter2 = symbol->generators.begin(); iter2 != symbol->generators.end(); iter2++)
         {
             Rule *rule = &(*iter2);
             if (rule->parts.empty())
             {
+                //symbolname的生成器为空
                 symbol->can_be_empty = 1;
                 break;
             }
@@ -412,7 +416,9 @@ int Grammar::Read(const char *filename)
     }
     file.close();
 
+    //针对所有symbol的生成语法进行分析
     AnalyzeGrammar();
+    //检查所有symbol的生成语法
     if (ret) ret = CheckGrammar();
     return ret;
 }
@@ -435,7 +441,7 @@ int Grammar::ParseGrammarLine(string &line, int lineno)
       <symbolname>=<space>
       <symbolname>=string
       <symbolname>=space   
-      根据每一个<symbolname>来生成Rule            
+      根据每一个<symbolname>来生成Rule，左边为symbolname，右边为symbolname的生成语法，也可作为生成器           
     */
 
     const char *str = cleanline.c_str();
@@ -726,6 +732,7 @@ Grammar::TreeNode *Grammar::GenerateTree(Symbol *symbol, PRNG *prng, int depth)
     node->type = SYMBOLTYPE;
     node->symbol = symbol;
 
+    //判断该节点是否重复定义
     if (symbol->repeat)
     {
         while (1)
@@ -743,9 +750,11 @@ Grammar::TreeNode *Grammar::GenerateTree(Symbol *symbol, PRNG *prng, int depth)
         return node;
     }
 
+    //获取该符号的定义次数及生成规则
     size_t num_generators = symbol->generators.size();
     Rule &generator = symbol->generators[prng->Rand() % num_generators];
 
+    //根据该符号的生成规则进行遍历生成节点
     RulePart *part;
     for (size_t part_index = 0; part_index < generator.parts.size(); part_index++)
     {

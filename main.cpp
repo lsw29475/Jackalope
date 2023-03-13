@@ -24,6 +24,7 @@ limitations under the License.
 
 class BinaryFuzzer : public Fuzzer
 {
+    //二进制fuzzer仅重载变异器
     Mutator *CreateMutator(int argc, char **argv, ThreadContext *tc) override;
     bool TrackHotOffsets() override
     {
@@ -138,6 +139,7 @@ public:
     GrammarFuzzer(const char *grammar_file);
 
 protected:
+    //语法编译器重载变异器，样本fuzz前预处理函数OutputFilter
     Grammar grammar;
     Mutator *CreateMutator(int argc, char **argv, ThreadContext *tc) override;
     Minimizer *CreateMinimizer(int argc, char **argv, ThreadContext *tc) override;
@@ -169,14 +171,17 @@ Minimizer *GrammarFuzzer::CreateMinimizer(int argc, char **argv, ThreadContext *
     return new GrammarMinimizer(&grammar);
 }
 
+//在fuzz之前进行额外的样本预处理
 bool GrammarFuzzer::OutputFilter(Sample *original_sample, Sample *output_sample, ThreadContext *tc)
 {
+    //默认语法fuzz输入样本前八位为样本大小
     uint64_t string_size = *((uint64_t *)original_sample->bytes);
     if (original_sample->size < (string_size + sizeof(string_size)))
     {
         FATAL("Incorrectly encoded grammar sample");
     }
 
+    //剥离出样本大小字段后将样本数据传入Sample
     output_sample->Init(original_sample->bytes + sizeof(string_size), string_size);
     return true;
 }
@@ -188,10 +193,12 @@ bool GrammarFuzzer::IsReturnValueInteresting(uint64_t return_value)
 
 void TestGrammar(char *grammar_path)
 {
+    //读取语法
     Grammar grammar;
     grammar.Read(grammar_path);
 
     PRNG *prng = new MTPRNG();
+    //语法解析完成后从语法中的root符号开始生成节点，语法文件变异以节点作为基本单位
     Grammar::TreeNode *tree = grammar.GenerateTree("root", prng);
     if (!tree)
     {

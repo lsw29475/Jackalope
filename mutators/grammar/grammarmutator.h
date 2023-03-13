@@ -6,71 +6,83 @@
 
 // The mutator context for Grammar mutator
 // is the tree structure of the current sample
-class GrammarMutatorContext : public MutatorSampleContext {
+//语法变异器的样本变异上下文环境
+class GrammarMutatorContext : public MutatorSampleContext
+{
 public:
-  GrammarMutatorContext(Sample* sample, Grammar* grammar);
+    GrammarMutatorContext(Sample *sample, Grammar *grammar);
 
-  Grammar::TreeNode* tree;
+    Grammar::TreeNode *tree;
 };
 
-class GrammarMutator : public Mutator {
+//语法变异器，其中包含多种变异方式，比如Replace，Splice，Repeat等，语法fuzz中使用
+class GrammarMutator : public Mutator
+{
 public:
-  // Mutator interface method
-  GrammarMutator(Grammar* grammar) : grammar(grammar) { }
-  bool CanGenerateSample() override { return true; }
-  bool GenerateSample(Sample* sample, PRNG* prng) override;
-  void InitRound(Sample* input_sample, MutatorSampleContext* context) override;
-  bool Mutate(Sample* inout_sample, PRNG* prng, std::vector<Sample*>& all_samples) override;
-  MutatorSampleContext* CreateSampleContext(Sample* sample) override;
+    // Mutator interface method
+    GrammarMutator(Grammar *grammar) :
+        grammar(grammar)
+    {
+    }
+    bool CanGenerateSample() override
+    {
+        return true;
+    }
+    bool GenerateSample(Sample *sample, PRNG *prng) override;
+    void InitRound(Sample *input_sample, MutatorSampleContext *context) override;
+    //语法变异器变异函数
+    bool Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample *> &all_samples) override;
+    //创建样本变异上下文环境，作为当前样本的树结构
+    MutatorSampleContext *CreateSampleContext(Sample *sample) override;
 
 protected:
-  // MUTATORS:
+    // MUTATORS:
 
-  // 1) Re-generates a random node
-  int ReplaceNode(Grammar::TreeNode* tree, PRNG* prng);
+    // 1) Re-generates a random node
+    int ReplaceNode(Grammar::TreeNode *tree, PRNG *prng);
 
-  // 2) Replaces a node from the current sample
-  //    With an equivalent node from another sample
-  int Splice(Grammar::TreeNode* tree, PRNG* prng);
+    // 2) Replaces a node from the current sample
+    //    With an equivalent node from another sample
+    int Splice(Grammar::TreeNode *tree, PRNG *prng);
 
-  // 3) Selects a <repeat> node from the current sample
-  //    and adds/potentially removes children from it
-  int RepeatMutator(Grammar::TreeNode* tree, PRNG* prng);
+    // 3) Selects a <repeat> node from the current sample
+    //    and adds/potentially removes children from it
+    int RepeatMutator(Grammar::TreeNode *tree, PRNG *prng);
 
-  // 4) Selects a <repeat> node from the current sample
-  //    and a similar <repeat> node from another sample.
-  //    Mixes children from the other node into the current node.
-  int RepeatSplice(Grammar::TreeNode* tree, PRNG* prng);
+    // 4) Selects a <repeat> node from the current sample
+    //    and a similar <repeat> node from another sample.
+    //    Mixes children from the other node into the current node.
+    int RepeatSplice(Grammar::TreeNode *tree, PRNG *prng);
 
-  // repeately attempts to generate a tree until an attempt is successful
-  Grammar::TreeNode* GenerateTreeNoFail(Grammar::Symbol* symbol, PRNG* prng);
-  Grammar::TreeNode* GenerateTreeNoFail(const char *symbol, PRNG* prng);
+    // repeately attempts to generate a tree until an attempt is successful
+    Grammar::TreeNode *GenerateTreeNoFail(Grammar::Symbol *symbol, PRNG *prng);
+    Grammar::TreeNode *GenerateTreeNoFail(const char *symbol, PRNG *prng);
 
-  Grammar::TreeNode* current_sample;
+    Grammar::TreeNode *current_sample;
 
-  struct MutationCandidate {
-    Grammar::TreeNode* node;
-    int depth;
-    double p;
-  };
+    struct MutationCandidate
+    {
+        Grammar::TreeNode *node;
+        int depth;
+        double p;
+    };
 
-  // list of candidatate tree nodes for mutation
-  // allocated here to avoid allocaing for each iteration
-  std::vector<MutationCandidate> candidates;
-  std::vector<MutationCandidate> splice_candidates;
-  std::vector<MutationCandidate> repeat_candidates;
+    // list of candidatate tree nodes for mutation
+    // allocated here to avoid allocaing for each iteration
+    std::vector<MutationCandidate> candidates;
+    std::vector<MutationCandidate> splice_candidates;
+    std::vector<MutationCandidate> repeat_candidates;
 
-  // creates a list of mutation candidates based on params
-  double GetMutationCandidates(std::vector<MutationCandidate>& candidates, Grammar::TreeNode* node, Grammar::Symbol* filter, int depth, int maxdepth, double p, bool just_repeat = false);
+    // creates a list of mutation candidates based on params
+    double GetMutationCandidates(std::vector<MutationCandidate> &candidates, Grammar::TreeNode *node, Grammar::Symbol *filter, int depth, int maxdepth, double p, bool just_repeat = false);
 
-  // selects a node to mutate from a list of candidates based on candidate probability
-  MutationCandidate* GetNodeToMutate(std::vector<MutationCandidate> &candidates, PRNG* prng);
+    // selects a node to mutate from a list of candidates based on candidate probability
+    MutationCandidate *GetNodeToMutate(std::vector<MutationCandidate> &candidates, PRNG *prng);
 
-  // global vector of other trees with unique coverage
-  // used by splice mutator etc.
-  static std::vector<Grammar::TreeNode*> interesting_trees;
-  Mutex interesting_trees_mutex;
+    // global vector of other trees with unique coverage
+    // used by splice mutator etc.
+    static std::vector<Grammar::TreeNode *> interesting_trees;
+    Mutex interesting_trees_mutex;
 
-  Grammar *grammar;
+    Grammar *grammar;
 };
-
