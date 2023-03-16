@@ -93,16 +93,20 @@ Mutator *BinaryFuzzer::CreateMutator(int argc, char **argv, ThreadContext *tc)
     // potentially repeat the mutation
     // (do two or more mutations in a single cycle
     // 0 indicates that actual mutation rate will be adapted
+    //生成随机性变异器
     RepeatMutator *repeater = new RepeatMutator(pselect_or_range, 0);
 
     if (!use_deterministic_mutations && !deterministic_only)
     {
+        //进行随机性变异
         // and have nrounds of this per sample cycle
         NRoundMutator *mutator = new NRoundMutator(repeater, nrounds);
         return mutator;
     }
     else
     {
+        //进行确定性变异以及随机性变异
+        //生成确定性变异器
         MutatorSequence *deterministic_sequence = new MutatorSequence(false, true);
         // do deterministic byte flip mutations (around hot bits)
         deterministic_sequence->AddMutator(new DeterministicByteFlipMutator());
