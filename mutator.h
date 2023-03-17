@@ -31,7 +31,7 @@ limitations under the License.
 
 #define REPEAT_STATS 11
 
-//样本变异上下文环境基类
+// 样本变异上下文环境基类
 class MutatorSampleContext
 {
 public:
@@ -45,7 +45,7 @@ public:
     std::vector<MutatorSampleContext *> child_contexts;
 };
 
-//变异器基类
+// 变异器基类
 class Mutator
 {
 public:
@@ -112,7 +112,7 @@ protected:
     std::vector<Mutator *> child_mutators;
 };
 
-//分层变异器，二进制fuzz中使用
+// 分层变异器，二进制fuzz中使用
 class HierarchicalMutator : public Mutator
 {
 public:
@@ -124,7 +124,7 @@ public:
         }
     }
 
-    //根据子变异器的数量设置样本上下文环境
+    // 根据子变异器的数量设置样本上下文环境
     void CreateChildContexts(Sample *sample, MutatorSampleContext *context)
     {
         context->child_contexts.resize(child_mutators.size());
@@ -134,7 +134,7 @@ public:
         }
     }
 
-    //创建新的样本上下文，在上下文环境中针对样本进行变异
+    // 创建新的样本上下文，在上下文环境中针对样本进行变异
     virtual MutatorSampleContext *CreateSampleContext(Sample *sample) override
     {
         MutatorSampleContext *context = new MutatorSampleContext;
@@ -386,6 +386,7 @@ public:
         psum += 1;
     }
 
+    // 添加变异器并指定变异器允许概率
     void AddMutator(Mutator *mutator, double p)
     {
         child_mutators.push_back(mutator);
@@ -510,12 +511,14 @@ public:
     static float adapted_repeat_p;
 };
 
+// Byte级数据随机调换
 class ByteFlipMutator : public Mutator
 {
 public:
     bool Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample *> &all_samples) override;
 };
 
+// Byte，Word，Dword级别数据随机自加
 class ArithmeticMutator : public Mutator
 {
 public:
@@ -526,6 +529,7 @@ private:
     bool MutateArithmeticValue(Sample *inout_sample, PRNG *prng, int flip_endian);
 };
 
+// 一段随机位置随机长度数据替换为随机数据
 class BlockFlipMutator : public Mutator
 {
 public:
@@ -542,6 +546,7 @@ protected:
     int max_block_size;
 };
 
+// 在末尾添加一段随机长度的随机数据
 class AppendMutator : public Mutator
 {
 public:
@@ -557,6 +562,7 @@ protected:
     int max_append;
 };
 
+// 在随机位置添加一段随机长度的随机数据
 class BlockInsertMutator : public Mutator
 {
 public:
@@ -572,6 +578,7 @@ protected:
     int max_insert;
 };
 
+// 在随机位置选取随机长度数据进行复制
 class BlockDuplicateMutator : public Mutator
 {
 public:
@@ -592,6 +599,7 @@ protected:
     int max_duplicate_cnt;
 };
 
+// 在随机位置替换数据为InterestingValue
 class InterestingValueMutator : public Mutator
 {
 public:

@@ -24,7 +24,7 @@ limitations under the License.
 
 class BinaryFuzzer : public Fuzzer
 {
-    //二进制fuzzer仅重载变异器
+    // 二进制fuzzer仅重载变异器生成器
     Mutator *CreateMutator(int argc, char **argv, ThreadContext *tc) override;
     bool TrackHotOffsets() override
     {
@@ -58,6 +58,7 @@ Mutator *BinaryFuzzer::CreateMutator(int argc, char **argv, ThreadContext *tc)
 
     // select one of the mutators below with corresponding
     // probablilities
+    // 添加变异器并指定变异器允许概率
     pselect->AddMutator(new ByteFlipMutator(), 0.8);
     pselect->AddMutator(new ArithmeticMutator(), 0.2);
     pselect->AddMutator(new AppendMutator(1, 128), 0.2);
@@ -93,33 +94,36 @@ Mutator *BinaryFuzzer::CreateMutator(int argc, char **argv, ThreadContext *tc)
     // potentially repeat the mutation
     // (do two or more mutations in a single cycle
     // 0 indicates that actual mutation rate will be adapted
-    //生成随机性变异器
+    // 生成单次变异循环变异器
     RepeatMutator *repeater = new RepeatMutator(pselect_or_range, 0);
 
     if (!use_deterministic_mutations && !deterministic_only)
     {
-        //进行随机性变异
-        // and have nrounds of this per sample cycle
+        // 生成轮变异器，即单个样本变异轮数
+        //  and have nrounds of this per sample cycle
         NRoundMutator *mutator = new NRoundMutator(repeater, nrounds);
         return mutator;
     }
     else
     {
-        //进行确定性变异以及随机性变异
-        //生成确定性变异器
+        // 进行确定性变异以及随机性变异
+        // 生成确定性变异器
         MutatorSequence *deterministic_sequence = new MutatorSequence(false, true);
         // do deterministic byte flip mutations (around hot bits)
         deterministic_sequence->AddMutator(new DeterministicByteFlipMutator());
         // ..followed by deterministc interesting values
         deterministic_sequence->AddMutator(new DeterministicInterestingValueMutator(true));
 
+        //指定确定性变异轮数
         size_t deterministic_rounds, nondeterministic_rounds;
         if (deterministic_only)
         {
+            //指定仅进行确定性变异
             deterministic_rounds = nrounds;
         }
         else
         {
+            //未指定仅进行确定性变异，一半轮数为确定性变异，一半为随机性变异
             deterministic_rounds = nrounds / 2;
         }
         nondeterministic_rounds = nrounds - deterministic_rounds;
@@ -143,7 +147,7 @@ public:
     GrammarFuzzer(const char *grammar_file);
 
 protected:
-    //语法编译器重载变异器，样本fuzz前预处理函数OutputFilter
+    // 语法编译器重载变异器，样本fuzz前预处理函数OutputFilter
     Grammar grammar;
     Mutator *CreateMutator(int argc, char **argv, ThreadContext *tc) override;
     Minimizer *CreateMinimizer(int argc, char **argv, ThreadContext *tc) override;
@@ -154,7 +158,7 @@ protected:
 
 GrammarFuzzer::GrammarFuzzer(const char *grammar_file)
 {
-    //读取语法输入并解析
+    // 读取语法输入并解析
     if (!grammar.Read(grammar_file))
     {
         FATAL("Error reading grammar");
@@ -175,17 +179,17 @@ Minimizer *GrammarFuzzer::CreateMinimizer(int argc, char **argv, ThreadContext *
     return new GrammarMinimizer(&grammar);
 }
 
-//在fuzz之前进行额外的样本预处理
+// 在fuzz之前进行额外的样本预处理
 bool GrammarFuzzer::OutputFilter(Sample *original_sample, Sample *output_sample, ThreadContext *tc)
 {
-    //默认语法fuzz输入样本前八位为样本大小
+    // 默认语法fuzz输入样本前八位为样本大小
     uint64_t string_size = *((uint64_t *)original_sample->bytes);
     if (original_sample->size < (string_size + sizeof(string_size)))
     {
         FATAL("Incorrectly encoded grammar sample");
     }
 
-    //剥离出样本大小字段后将样本数据传入Sample
+    // 剥离出样本大小字段后将样本数据传入Sample
     output_sample->Init(original_sample->bytes + sizeof(string_size), string_size);
     return true;
 }
@@ -197,12 +201,12 @@ bool GrammarFuzzer::IsReturnValueInteresting(uint64_t return_value)
 
 void TestGrammar(char *grammar_path)
 {
-    //读取语法
+    // 读取语法
     Grammar grammar;
     grammar.Read(grammar_path);
 
     PRNG *prng = new MTPRNG();
-    //语法解析完成后从语法中的root符号开始生成节点，语法文件变异以节点作为基本单位
+    // 语法解析完成后从语法中的root符号开始生成节点，语法文件变异以节点作为基本单位
     Grammar::TreeNode *tree = grammar.GenerateTree("root", prng);
     if (!tree)
     {
@@ -223,7 +227,7 @@ int main(int argc, char **argv)
     char *grammar = GetOption("-test_grammar", argc, argv);
     if (grammar)
     {
-        //进行语法测试
+        // 进行语法测试
         TestGrammar(grammar);
         return 0;
     }
