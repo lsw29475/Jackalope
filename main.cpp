@@ -114,16 +114,16 @@ Mutator *BinaryFuzzer::CreateMutator(int argc, char **argv, ThreadContext *tc)
         // ..followed by deterministc interesting values
         deterministic_sequence->AddMutator(new DeterministicInterestingValueMutator(true));
 
-        //指定确定性变异轮数
+        // 指定确定性变异轮数
         size_t deterministic_rounds, nondeterministic_rounds;
         if (deterministic_only)
         {
-            //指定仅进行确定性变异
+            // 指定仅进行确定性变异
             deterministic_rounds = nrounds;
         }
         else
         {
-            //未指定仅进行确定性变异，一半轮数为确定性变异，一半为随机性变异
+            // 未指定仅进行确定性变异，一半轮数为确定性变异，一半为随机性变异
             deterministic_rounds = nrounds / 2;
         }
         nondeterministic_rounds = nrounds - deterministic_rounds;
@@ -147,10 +147,11 @@ public:
     GrammarFuzzer(const char *grammar_file);
 
 protected:
-    // 语法编译器重载变异器，样本fuzz前预处理函数OutputFilter
+    // 构造函数输入的语法文件
     Grammar grammar;
     Mutator *CreateMutator(int argc, char **argv, ThreadContext *tc) override;
     Minimizer *CreateMinimizer(int argc, char **argv, ThreadContext *tc) override;
+    // 样本fuzz前预处理函数OutputFilter
     bool OutputFilter(Sample *original_sample, Sample *output_sample, ThreadContext *tc) override;
 
     bool IsReturnValueInteresting(uint64_t return_value) override;
@@ -158,7 +159,7 @@ protected:
 
 GrammarFuzzer::GrammarFuzzer(const char *grammar_file)
 {
-    // 读取语法输入并解析
+    // 读取语法输入并解析，将语法文件中的所有Symbol生成规则保存到Rule
     if (!grammar.Read(grammar_file))
     {
         FATAL("Error reading grammar");
@@ -167,6 +168,7 @@ GrammarFuzzer::GrammarFuzzer(const char *grammar_file)
 
 Mutator *GrammarFuzzer::CreateMutator(int argc, char **argv, ThreadContext *tc)
 {
+    // 根据fuzz时指定的语法文件生成语法变异器
     GrammarMutator *grammar_mutator = new GrammarMutator(&grammar);
 
     NRoundMutator *mutator = new NRoundMutator(grammar_mutator, 20);

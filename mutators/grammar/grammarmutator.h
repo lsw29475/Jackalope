@@ -6,7 +6,7 @@
 
 // The mutator context for Grammar mutator
 // is the tree structure of the current sample
-//语法变异器的样本变异上下文环境
+// 语法变异器的样本变异上下文环境
 class GrammarMutatorContext : public MutatorSampleContext
 {
 public:
@@ -15,7 +15,7 @@ public:
     Grammar::TreeNode *tree;
 };
 
-//语法变异器，其中包含多种变异方式，比如Replace，Splice，Repeat等，语法fuzz中使用
+// 语法变异器，其中包含多种变异方式，比如Replace，Splice，Repeat等，语法fuzz中使用
 class GrammarMutator : public Mutator
 {
 public:
@@ -30,9 +30,9 @@ public:
     }
     bool GenerateSample(Sample *sample, PRNG *prng) override;
     void InitRound(Sample *input_sample, MutatorSampleContext *context) override;
-    //语法变异器变异函数
+    // 语法变异器变异函数
     bool Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample *> &all_samples) override;
-    //创建样本变异上下文环境，作为当前样本的树结构
+    // 创建样本变异上下文环境，作为当前样本的树结构
     MutatorSampleContext *CreateSampleContext(Sample *sample) override;
 
 protected:
@@ -84,5 +84,6 @@ protected:
     static std::vector<Grammar::TreeNode *> interesting_trees;
     Mutex interesting_trees_mutex;
 
+    // 语法fuzz时输入的语法文件
     Grammar *grammar;
 };

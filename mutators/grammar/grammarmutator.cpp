@@ -33,7 +33,7 @@ Grammar::TreeNode *GrammarMutator::GenerateTreeNoFail(const char *symbol, PRNG *
 
 GrammarMutatorContext::GrammarMutatorContext(Sample *sample, Grammar *grammar)
 {
-    //创建样本变异的树结构，先对输入的样本进行解码分析
+    // 创建样本变异的树结构，先对输入的样本进行解码分析
     tree = grammar->DecodeSample(sample);
     if (!tree)
     {
@@ -94,7 +94,7 @@ GrammarMutator::MutationCandidate *GrammarMutator::GetNodeToMutate(std::vector<M
 
 MutatorSampleContext *GrammarMutator::CreateSampleContext(Sample *sample)
 {
-    //创建样本变异上下文环境，作为当前样本的树结构
+    // 创建样本变异上下文环境，作为当前样本的树结构
     GrammarMutatorContext *context = new GrammarMutatorContext(sample, grammar);
     // we are abusing the fact that CreateSampleContext is only called
     // for interesting samples
@@ -118,6 +118,7 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
     double rand_mutator_select = prng->RandReal();
     if (rand_mutator_select < 0.1)
     {
+        // 小概率事件可能根据输入的语法文件来生成树节点，之后根据输入的语法文件的节点生成fuzz样本
         Grammar::TreeNode *generated = grammar->GenerateTree("root", prng);
         if (generated)
         {
@@ -128,12 +129,13 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
 
     if (mutator_success)
     {
+        // 根据输入的语法文件的节点生成fuzz样本
         grammar->EncodeSample(&new_sample, inout_sample);
         return true;
     }
 
+    //大概率事件可能基于当前输入fuzz样本进行变异
     new_sample = *current_sample;
-
     // otherwise, randomly selects a specific mutator
     // and potentially repeats the process with the same sample
     for (int i = 0; i < 100; i++)

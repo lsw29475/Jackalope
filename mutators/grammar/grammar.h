@@ -157,7 +157,9 @@ public:
     Symbol *GetSymbol(std::string &name);
 
     // Encodes/decodes a tree to/from binary form
+    //将树节点编码为样本
     void EncodeSample(TreeNode *tree, Sample *sample);
+    //将样本解码为树节点
     TreeNode *DecodeSample(Sample *sample);
 
 protected:
