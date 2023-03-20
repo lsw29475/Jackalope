@@ -33,7 +33,7 @@ Grammar::TreeNode *GrammarMutator::GenerateTreeNoFail(const char *symbol, PRNG *
 
 GrammarMutatorContext::GrammarMutatorContext(Sample *sample, Grammar *grammar)
 {
-    // 创建样本变异的树结构，先对输入的样本进行解码分析
+    // 创建样本变异的树结构，先对输入的样本进行解码分析，将样本解码为树节点
     tree = grammar->DecodeSample(sample);
     if (!tree)
     {
