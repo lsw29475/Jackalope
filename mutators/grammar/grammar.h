@@ -179,7 +179,9 @@ protected:
                     std::unordered_map<std::string, std::string> &attributes);
     int HexStringToString(std::string &hex, std::string &out);
 
+    //将节点树进行编码，写入到样本文件中
     void EncodeTree(TreeNode *tree, BinaryRW *rw);
+    //对指定的输入fuzz样本进行解码，将其解码为节点树
     TreeNode *DecodeTree(BinaryRW *rw);
 
     std::unordered_map<std::string, Symbol *> symbols;

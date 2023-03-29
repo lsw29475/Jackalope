@@ -940,7 +940,7 @@ void Fuzzer::RunFuzzerThread(ThreadContext *tc)
             break;
         case PROCESS_SAMPLE:
             //job准备完毕首先进入样本预处理
-            ProcessSample(tc, &job);
+             ProcessSample(tc, &job);
             break;
         case FUZZ:
             FuzzJob(tc, &job);
