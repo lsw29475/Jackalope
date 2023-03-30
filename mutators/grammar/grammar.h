@@ -151,6 +151,7 @@ public:
     TreeNode *GenerateTree(Symbol *symbol, PRNG *prng, int depth = 0);
 
     // Converts a tree into a string representation
+    //将一棵语法树转换为字符串展现的形式，即将其中根节点symbol规则展开的字符串进行输出
     void ToString(TreeNode *tree, std::string &out);
 
     // Retrieves a Symbol by name

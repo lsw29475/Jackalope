@@ -205,6 +205,8 @@ void TestGrammar(char *grammar_path)
 {
     // 读取语法
     Grammar grammar;
+    Sample sample;
+
     grammar.Read(grammar_path);
 
     PRNG *prng = new MTPRNG();
@@ -216,9 +218,12 @@ void TestGrammar(char *grammar_path)
     }
     else
     {
+        //输出一个测试样例
         std::string out;
         grammar.ToString(tree, out);
         printf("Generated sample:\n%s\n", out.c_str());
+        grammar.EncodeSample(tree, &sample);
+        sample.Save("grammer_sample");
     }
 }
 
