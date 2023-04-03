@@ -51,19 +51,38 @@ bool GrammarMutator::GenerateSample(Sample *sample, PRNG *prng)
 
 double GrammarMutator::GetMutationCandidates(std::vector<MutationCandidate> &candidates, Grammar::TreeNode *node, Grammar::Symbol *filter, int depth, int maxdepth, double p, bool just_repeat)
 {
-    if (depth == 0) candidates.clear();
-    if (depth > maxdepth) return 0;
-    if (node->type == Grammar::STRINGTYPE) return 0;
+    if (depth == 0)
+    {
+        candidates.clear();
+    }
+
+    if (depth > maxdepth)
+    {
+        return 0;
+    }
+
+    if (node->type == Grammar::STRINGTYPE)
+    {
+        return 0;
+    }
+
     if (!filter || (node->symbol == filter))
     {
+        //未指定针对固定节点或节点等于指定节点
         if (!just_repeat || node->symbol->repeat)
         {
+            //未指定针对重复节点或当前节点为重复节点，将当前节点加入到待变异的节点容器中
             candidates.push_back({node, depth, p});
         }
     }
+
     for (auto iter = node->children.begin(); iter != node->children.end(); iter++)
     {
-        if ((*iter)->type == Grammar::STRINGTYPE) continue;
+        //针对该节点的子节点进行遍历，将符合条件的节点加入到待变异的节点容器
+        if ((*iter)->type == Grammar::STRINGTYPE)
+        {
+            continue;
+        }
         GetMutationCandidates(candidates, *iter, filter, depth + 1, maxdepth, p / 1.4, just_repeat);
     }
     return p;
@@ -71,13 +90,22 @@ double GrammarMutator::GetMutationCandidates(std::vector<MutationCandidate> &can
 
 GrammarMutator::MutationCandidate *GrammarMutator::GetNodeToMutate(std::vector<MutationCandidate> &candidates, PRNG *prng)
 {
-    if (candidates.empty()) return NULL;
+    if (candidates.empty())
+    {
+        return NULL;
+    }
+
     double psum = 0;
     for (int i = 0; i < candidates.size(); i++)
     {
         psum += candidates[i].p;
     }
-    if (psum == 0) return NULL;
+
+    if (psum == 0)
+    {
+        return NULL;
+    }
+
     double p = prng->RandReal() * psum;
     double sum = 0;
     for (int i = 0; i < candidates.size(); i++)
@@ -142,9 +170,11 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
     {
         mutator_success = 0;
 
+        //从样本的节点树中获取待变异的节点
         GetMutationCandidates(candidates, &new_sample, NULL, 0, MAX_DEPTH, 1);
         GetMutationCandidates(repeat_candidates, &new_sample, NULL, 0, MAX_DEPTH, 1, true);
 
+        //根据随机概率，选择对应的变异策略
         double rand_mutator_select = prng->RandReal();
         if (rand_mutator_select < 0.3)
         {
@@ -194,17 +224,21 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
 
 int GrammarMutator::ReplaceNode(Grammar::TreeNode *tree, PRNG *prng)
 {
+    //随机获取一个候选变异节点
     MutationCandidate *mutation_candidate = GetNodeToMutate(candidates, prng);
     if (!mutation_candidate)
     {
         FATAL("Error selecting grammar node to mutate");
     }
 
+    //获取当前候选变异节点
     Grammar::TreeNode *node_to_mutate = mutation_candidate->node;
     // printf("Mutating node %s\n", node_to_mutate->symbol->name.c_str());
+    //随机获取当前候选变异节点的一种展开方式
     Grammar::TreeNode *replacement = grammar->GenerateTree(node_to_mutate->symbol, prng, mutation_candidate->depth);
     if (replacement)
     {
+        //将新获取的节点展开方式对旧的展开方式进行替换
         node_to_mutate->Replace(replacement);
         return 1;
     }

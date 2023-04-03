@@ -722,6 +722,7 @@ Grammar::TreeNode *Grammar::GenerateTree(Symbol *symbol, PRNG *prng, int depth)
 {
     if (depth > MAX_DEPTH)
     {
+        //当前节点深度大于指定最大深度，直接返回
         // printf("Warning: Maximum recursion depth reached while generating symbol %s\n", symbol->name.c_str());
         return NULL;
     }
@@ -752,9 +753,10 @@ Grammar::TreeNode *Grammar::GenerateTree(Symbol *symbol, PRNG *prng, int depth)
 
     //获取该符号的定义次数及生成规则
     size_t num_generators = symbol->generators.size();
+    //随机获取一个生成规则
     Rule &generator = symbol->generators[prng->Rand() % num_generators];
 
-    //根据该符号的生成规则进行遍历生成节点
+    //根据该符号的生成规则进行遍历生成节点的展开方式
     RulePart *part;
     for (size_t part_index = 0; part_index < generator.parts.size(); part_index++)
     {

@@ -69,14 +69,17 @@ protected:
 
     // list of candidatate tree nodes for mutation
     // allocated here to avoid allocaing for each iteration
+    //三类待变异的候选变异节点容器
     std::vector<MutationCandidate> candidates;
     std::vector<MutationCandidate> splice_candidates;
     std::vector<MutationCandidate> repeat_candidates;
 
     // creates a list of mutation candidates based on params
+    //从给定的节点树选取符合条件的节点加入候选变异节点容器
     double GetMutationCandidates(std::vector<MutationCandidate> &candidates, Grammar::TreeNode *node, Grammar::Symbol *filter, int depth, int maxdepth, double p, bool just_repeat = false);
 
     // selects a node to mutate from a list of candidates based on candidate probability
+    //从候选变异节点容器中随机挑选一个变异节点
     MutationCandidate *GetNodeToMutate(std::vector<MutationCandidate> &candidates, PRNG *prng);
 
     // global vector of other trees with unique coverage

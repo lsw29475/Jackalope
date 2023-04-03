@@ -210,15 +210,15 @@ void TestGrammar(char *grammar_path)
     grammar.Read(grammar_path);
 
     PRNG *prng = new MTPRNG();
-    // 语法解析完成后从语法中的root符号开始生成节点，语法文件变异以节点作为基本单位
-    Grammar::TreeNode *tree = grammar.GenerateTree("root", prng);
+    // 语法解析完成后从语法中的root符号开始随机生成一个节点树，语法文件变异以节点作为基本单位
+    Grammar::TreeNode *tree = grammar.GenerateTree("term", prng);
     if (!tree)
     {
         printf("Grammar failed to generate sample\n");
     }
     else
     {
-        //输出一个测试样例
+        //根据给定的符号，随机生成一个节点树并输出一个测试样例
         std::string out;
         grammar.ToString(tree, out);
         printf("Generated sample:\n%s\n", out.c_str());
