@@ -126,6 +126,8 @@ MutatorSampleContext *GrammarMutator::CreateSampleContext(Sample *sample)
     GrammarMutatorContext *context = new GrammarMutatorContext(sample, grammar);
     // we are abusing the fact that CreateSampleContext is only called
     // for interesting samples
+
+    //将当前变异上下文环境中的节点树添加到感兴趣的节点树容器中
     interesting_trees_mutex.Lock();
     interesting_trees.push_back(context->tree);
     interesting_trees_mutex.Unlock();
@@ -170,7 +172,7 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
     {
         mutator_success = 0;
 
-        //从样本的节点树中获取待变异的节点
+        //将当前准备变异的样本节点树的节点添加到待变异的节点容器中
         GetMutationCandidates(candidates, &new_sample, NULL, 0, MAX_DEPTH, 1);
         GetMutationCandidates(repeat_candidates, &new_sample, NULL, 0, MAX_DEPTH, 1, true);
 
@@ -230,11 +232,11 @@ int GrammarMutator::ReplaceNode(Grammar::TreeNode *tree, PRNG *prng)
     {
         FATAL("Error selecting grammar node to mutate");
     }
-
-    //获取当前候选变异节点
+    //获取当前候选变异节点的节点树
     Grammar::TreeNode *node_to_mutate = mutation_candidate->node;
+
     // printf("Mutating node %s\n", node_to_mutate->symbol->name.c_str());
-    //随机获取当前候选变异节点的一种展开方式
+    //从语法文件中随机获取当前候选变异节点的一种展开方式
     Grammar::TreeNode *replacement = grammar->GenerateTree(node_to_mutate->symbol, prng, mutation_candidate->depth);
     if (replacement)
     {
@@ -250,13 +252,20 @@ int GrammarMutator::ReplaceNode(Grammar::TreeNode *tree, PRNG *prng)
 
 int GrammarMutator::Splice(Grammar::TreeNode *tree, PRNG *prng)
 {
+    //随机获取一个候选变异节点
     MutationCandidate *current_candidate = GetNodeToMutate(candidates, prng);
-    if (!current_candidate) return 0;
+    if (!current_candidate)
+    {
+        return 0;
+    }
+
+    //获取当前候选变异节点的节点树
     Grammar::TreeNode *node = current_candidate->node;
 
     Grammar::TreeNode *other_tree = NULL;
     size_t num_others = 0;
 
+    //从感兴趣的树容器中随机选取一棵节点树
     interesting_trees_mutex.Lock();
     num_others = interesting_trees.size();
     if (!num_others)
@@ -267,13 +276,21 @@ int GrammarMutator::Splice(Grammar::TreeNode *tree, PRNG *prng)
     other_tree = interesting_trees[prng->Rand() % num_others];
     interesting_trees_mutex.Unlock();
 
+    //从感兴趣的节点树中选取符合条件的节点加入Splice待变异节点容器
     GetMutationCandidates(splice_candidates, other_tree, node->symbol, 0, current_candidate->depth, 1);
-    if (splice_candidates.empty()) return 0;
+    if (splice_candidates.empty())
+    {
+        return 0;
+    }
 
+    //获取Splice待变异节点的节点树
     MutationCandidate *other_candidate = GetNodeToMutate(splice_candidates, prng);
-    if (!other_candidate) return 0;
+    if (!other_candidate)
+    {
+        return 0;
+    }
 
-    // actually do the splice
+    //使用新获取的节点对待变异的节点进行替换
     *node = *other_candidate->node;
 
     return 1;
@@ -281,22 +298,35 @@ int GrammarMutator::Splice(Grammar::TreeNode *tree, PRNG *prng)
 
 int GrammarMutator::RepeatMutator(Grammar::TreeNode *tree, PRNG *prng)
 {
-    if (repeat_candidates.empty()) return 0;
+    //从候选的重复节点容器中选取一个重复节点
+    if (repeat_candidates.empty())
+    {
+        return 0;
+    }
     MutationCandidate *candidate = GetNodeToMutate(repeat_candidates, prng);
-    if (!candidate) return 0;
+    if (!candidate)
+    {
+        return 0;
+    }
     Grammar::TreeNode *node = candidate->node;
 
+    //随机选取一个重复位置
     int mutate_position = 0;
-    if (!node->children.empty()) mutate_position = prng->Rand() % node->children.size();
-
+    if (!node->children.empty())
+    {
+        mutate_position = prng->Rand() % node->children.size();
+    }
     auto iter = node->children.begin();
     int position = 0;
-    for (; position < mutate_position; position++) iter++;
+    for (; position < mutate_position; position++)
+    {
+        iter++;
+    }
 
+    //随机选择重复节点删除或添加
     int do_delete = 0;
     int do_insert = 0;
     double rand_mutator_select = prng->RandReal();
-
     if (rand_mutator_select < 0.2)
     {
         do_delete = 1;
@@ -314,32 +344,54 @@ int GrammarMutator::RepeatMutator(Grammar::TreeNode *tree, PRNG *prng)
     int ret = 0;
 
     // do generation here so we can return early if it failed
+    //如果选定添加重复节点，则从语法文件中随机获取一种重复节点的展开式，并随机重复多次
     std::vector<Grammar::TreeNode *> new_children;
     if (do_insert)
     {
         while (1)
         {
             Grammar::TreeNode *child = grammar->GenerateTree(node->symbol->repeat_symbol, prng, candidate->depth + 1);
-            if (child) new_children.push_back(child);
-            if (prng->RandReal() > REPEAT_PROBABILITY) break;
+            if (child)
+            {
+                new_children.push_back(child);
+            }
+            if (prng->RandReal() > REPEAT_PROBABILITY)
+            {
+                break;
+            }
         }
-        if (new_children.empty()) return 0;
+        if (new_children.empty())
+        {
+            return 0;
+        }
     }
 
+    //随即删除选定样本的变异节点的部分展开
     if (do_delete)
     {
         while (1)
         {
-            if (iter == node->children.end()) break;
+            if (iter == node->children.end())
+            {
+                break;
+            }
             delete *iter;
             iter = node->children.erase(iter);
-            if (prng->RandReal() > REPEAT_PROBABILITY) break;
+            if (prng->RandReal() > REPEAT_PROBABILITY)
+            {
+                break;
+            }
         }
     }
 
+    //随机针对选定样本的变异节点的展开进行插入
     if (do_insert)
     {
-        if (iter != node->children.end()) iter++;
+        if (iter != node->children.end())
+        {
+            iter++;
+        }
+
         for (auto iter2 = new_children.begin(); iter2 != new_children.end(); iter2++)
         {
             Grammar::TreeNode *child = *iter2;
@@ -353,9 +405,16 @@ int GrammarMutator::RepeatMutator(Grammar::TreeNode *tree, PRNG *prng)
 
 int GrammarMutator::RepeatSplice(Grammar::TreeNode *tree, PRNG *prng)
 {
-    if (repeat_candidates.empty()) return 0;
+    //从候选的重复节点容器中选取一个重复节点
+    if (repeat_candidates.empty())
+    {
+        return 0;
+    }
     MutationCandidate *candidate = GetNodeToMutate(repeat_candidates, prng);
-    if (!candidate) return 0;
+    if (!candidate)
+    {
+        return 0;
+    }
     Grammar::TreeNode *node = candidate->node;
 
     // TODO: put this in a function
@@ -373,24 +432,42 @@ int GrammarMutator::RepeatSplice(Grammar::TreeNode *tree, PRNG *prng)
     interesting_trees_mutex.Unlock();
 
     GetMutationCandidates(splice_candidates, other_tree, node->symbol, 0, candidate->depth, 1, true);
-    if (splice_candidates.empty()) return 0;
+    if (splice_candidates.empty())
+    {
+        return 0;
+    }
 
     MutationCandidate *other_candidate = GetNodeToMutate(splice_candidates, prng);
-    if (!other_candidate) return 0;
+    if (!other_candidate)
+    {
+        return 0;
+    }
 
     Grammar::TreeNode *other_node = other_candidate->node;
 
     int mutate_position = 0;
-    if (!node->children.empty()) mutate_position = prng->Rand() % node->children.size();
+    if (!node->children.empty())
+    {
+        mutate_position = prng->Rand() % node->children.size();
+    }
 
     int other_position = 0;
-    if (!other_node->children.empty()) other_position = prng->Rand() % other_node->children.size();
+    if (!other_node->children.empty())
+    {
+        other_position = prng->Rand() % other_node->children.size();
+    }
 
     auto iter = node->children.begin();
-    for (int i = 0; i < mutate_position; i++) iter++;
+    for (int i = 0; i < mutate_position; i++)
+    {
+        iter++;
+    }
 
     auto other_iter = other_node->children.begin();
-    for (int i = 0; i < other_position; i++) other_iter++;
+    for (int i = 0; i < other_position; i++)
+    {
+        other_iter++;
+    }
 
     int do_delete = 0;
     double rand_mutator_select = prng->RandReal();
@@ -403,22 +480,37 @@ int GrammarMutator::RepeatSplice(Grammar::TreeNode *tree, PRNG *prng)
     {
         while (1)
         {
-            if (iter == node->children.end()) break;
+            if (iter == node->children.end())
+            {
+                break;
+            }
             delete *iter;
             iter = node->children.erase(iter);
-            if (prng->RandReal() > REPEAT_PROBABILITY) break;
+            if (prng->RandReal() > REPEAT_PROBABILITY)
+            {
+                break;
+            }
         }
     }
 
-    if (iter != node->children.end()) iter++;
+    if (iter != node->children.end())
+    {
+        iter++;
+    }
     while (1)
     {
-        if (other_iter == other_node->children.end()) break;
+        if (other_iter == other_node->children.end())
+        {
+            break;
+        }
         Grammar::TreeNode *child = new Grammar::TreeNode(**other_iter);
         iter = node->children.insert(iter, child);
         iter++;
         other_iter++;
-        if (prng->RandReal() > REPEAT_PROBABILITY) break;
+        if (prng->RandReal() > REPEAT_PROBABILITY)
+        {
+            break;
+        }
     }
 
     return 1;

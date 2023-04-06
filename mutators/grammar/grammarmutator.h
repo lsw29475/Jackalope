@@ -39,19 +39,23 @@ protected:
     // MUTATORS:
 
     // 1) Re-generates a random node
+    //对当前树的一个节点的具体展开方式使用语法文件中的一种展开方式进行替换
     int ReplaceNode(Grammar::TreeNode *tree, PRNG *prng);
 
     // 2) Replaces a node from the current sample
     //    With an equivalent node from another sample
+    //对当前样本树的节点使用其他样本树的同名节点进行替换
     int Splice(Grammar::TreeNode *tree, PRNG *prng);
 
     // 3) Selects a <repeat> node from the current sample
     //    and adds/potentially removes children from it
+    //对当前树的一个重复节点的具体展开方式使用语法文件中的一种重复节点的展开方式进行重复的递增或是删减
     int RepeatMutator(Grammar::TreeNode *tree, PRNG *prng);
 
     // 4) Selects a <repeat> node from the current sample
     //    and a similar <repeat> node from another sample.
     //    Mixes children from the other node into the current node.
+    //对当前树的一个重复节点的具体展开方式使用其他样本树的同名重复节点的展开方式进行重复的递增或是删减
     int RepeatSplice(Grammar::TreeNode *tree, PRNG *prng);
 
     // repeately attempts to generate a tree until an attempt is successful
