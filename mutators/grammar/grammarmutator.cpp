@@ -172,13 +172,27 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
     {
         mutator_success = 0;
 
-        //将当前准备变异的样本节点树的节点添加到待变异的节点容器中
+        //变异一开始，先将当前准备变异的样本节点树的节点添加到待变异的节点容器中
         GetMutationCandidates(candidates, &new_sample, NULL, 0, MAX_DEPTH, 1);
         GetMutationCandidates(repeat_candidates, &new_sample, NULL, 0, MAX_DEPTH, 1, true);
 
         //根据随机概率，选择对应的变异策略
         double rand_mutator_select = prng->RandReal();
-        if (rand_mutator_select < 0.3)
+        if (rand_mutator_select < 0.1)
+        {
+            if (InsertMutator(&new_sample, prng))
+            {
+                mutator_success++;
+            }
+        }
+        else if (rand_mutator_select < 0.2)
+        {
+            if (InsertSplice(&new_sample, prng))
+            {
+                mutator_success++;
+            }
+        }
+        else if (rand_mutator_select < 0.3)
         {
             if (ReplaceNode(&new_sample, prng))
             {
@@ -224,9 +238,113 @@ bool GrammarMutator::Mutate(Sample *inout_sample, PRNG *prng, std::vector<Sample
     return true;
 }
 
-int GrammarMutator::ReplaceNode(Grammar::TreeNode *tree, PRNG *prng)
+int GrammarMutator::InsertMutator(Grammar::TreeNode *tree, PRNG *prng)
 {
     //随机获取一个候选变异节点
+    MutationCandidate *mutation_candidate = GetNodeToMutate(candidates, prng);
+    if (!mutation_candidate)
+    {
+        FATAL("Error selecting grammar node to mutate");
+    }
+    //获取当前候选变异节点的节点树
+    Grammar::TreeNode *node_to_mutate = mutation_candidate->node;
+
+    //随机选取一个重复位置
+    int mutate_position = 0;
+    if (!node_to_mutate->children.empty())
+    {
+        mutate_position = prng->Rand() % node_to_mutate->children.size();
+    }
+    auto iter = node_to_mutate->children.begin();
+    int position = 0;
+    for (; position < mutate_position; position++)
+    {
+        iter++;
+    }
+
+    //从语法文件随机生成指定符号名的一棵节点树
+    Grammar::TreeNode *insertment = grammar->GenerateTree(node_to_mutate->symbol, prng, mutation_candidate->depth);
+    if (insertment)
+    {
+        for (auto iter2 = insertment->children.begin(); iter2 != insertment->children.end(); iter2++)
+        {
+            Grammar::TreeNode *child = *iter2;
+            iter = node_to_mutate->children.insert(iter, child);
+            iter++;
+        }
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int GrammarMutator::InsertSplice(Grammar::TreeNode *tree, PRNG *prng)
+{
+    //随机获取一个候选变异节点
+    MutationCandidate *current_candidate = GetNodeToMutate(candidates, prng);
+    if (!current_candidate)
+    {
+        return 0;
+    }
+    //获取当前候选变异节点的节点树
+    Grammar::TreeNode *node_to_mutate = current_candidate->node;
+
+    //随机选取一个重复位置
+    int mutate_position = 0;
+    if (!node_to_mutate->children.empty())
+    {
+        mutate_position = prng->Rand() % node_to_mutate->children.size();
+    }
+    auto iter = node_to_mutate->children.begin();
+    int position = 0;
+    for (; position < mutate_position; position++)
+    {
+        iter++;
+    }
+
+    Grammar::TreeNode *other_tree = NULL;
+    size_t num_others = 0;
+
+    //从感兴趣的树容器中随机选取一棵节点树
+    interesting_trees_mutex.Lock();
+    num_others = interesting_trees.size();
+    if (!num_others)
+    {
+        interesting_trees_mutex.Unlock();
+        return 0;
+    }
+    other_tree = interesting_trees[prng->Rand() % num_others];
+    interesting_trees_mutex.Unlock();
+
+    //从感兴趣的节点树中选取符合条件的节点加入insert待变异节点容器
+    GetMutationCandidates(insert_candidates, other_tree, node_to_mutate->symbol, 0, current_candidate->depth, 1);
+    if (insert_candidates.empty())
+    {
+        return 0;
+    }
+
+    MutationCandidate *other_candiate = GetNodeToMutate(insert_candidates, prng);
+    if (!other_candiate)
+    {
+        return 0;
+    }
+    Grammar::TreeNode *other_node = other_candiate->node;
+
+    for (auto other_iter = other_node->children.begin(); other_iter != other_node->children.end(); other_iter++)
+    {
+        Grammar::TreeNode *child = new Grammar::TreeNode(**other_iter);
+        iter = node_to_mutate->children.insert(iter, child);
+        iter++;
+    }
+
+    return 1;
+}
+
+int GrammarMutator::ReplaceNode(Grammar::TreeNode *tree, PRNG *prng)
+{
+    //从候选容器中随机获取一个候选变异节点
     MutationCandidate *mutation_candidate = GetNodeToMutate(candidates, prng);
     if (!mutation_candidate)
     {

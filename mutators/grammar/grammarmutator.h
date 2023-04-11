@@ -39,24 +39,27 @@ protected:
     // MUTATORS:
 
     // 1) Re-generates a random node
-    //对当前树的一个节点的具体展开方式使用语法文件中的一种展开方式进行替换
+    //对当前树的一个节点的具体展开方式使用语法文件中的一种展开方式进行替换，即针对children利用语法文件进行变异
     int ReplaceNode(Grammar::TreeNode *tree, PRNG *prng);
 
     // 2) Replaces a node from the current sample
     //    With an equivalent node from another sample
-    //对当前样本树的节点使用其他样本树的同名节点进行替换
+    //对当前样本树的节点使用其他样本树的同名节点进行替换，即针对Node利用其他样本节点树的节点进行变异
     int Splice(Grammar::TreeNode *tree, PRNG *prng);
 
     // 3) Selects a <repeat> node from the current sample
     //    and adds/potentially removes children from it
-    //对当前树的一个重复节点的具体展开方式使用语法文件中的一种重复节点的展开方式进行重复的递增或是删减
+    //对当前树的一个重复节点的具体展开方式使用语法文件中的一种重复节点的展开方式进行重复的递增或是删减，即针对children利用语法文件进行变异
     int RepeatMutator(Grammar::TreeNode *tree, PRNG *prng);
 
     // 4) Selects a <repeat> node from the current sample
     //    and a similar <repeat> node from another sample.
     //    Mixes children from the other node into the current node.
-    //对当前树的一个重复节点的具体展开方式使用其他样本树的同名重复节点的展开方式进行重复的递增或是删减
+    //对当前树的一个重复节点的具体展开方式使用其他样本树的同名重复节点的展开方式进行重复的递增或是删减，即针对Node利用其他样本节点树的节点进行变异
     int RepeatSplice(Grammar::TreeNode *tree, PRNG *prng);
+
+    int InsertMutator(Grammar::TreeNode *tree, PRNG *prng);
+    int InsertSplice(Grammar::TreeNode *tree, PRNG *prng);
 
     // repeately attempts to generate a tree until an attempt is successful
     Grammar::TreeNode *GenerateTreeNoFail(Grammar::Symbol *symbol, PRNG *prng);
@@ -73,10 +76,15 @@ protected:
 
     // list of candidatate tree nodes for mutation
     // allocated here to avoid allocaing for each iteration
-    //三类待变异的候选变异节点容器
+    //四类待变异的候选变异节点容器，在变异一开始将样本的节点加入到变异容器中
+    //正常变异候选节点容器
     std::vector<MutationCandidate> candidates;
-    std::vector<MutationCandidate> splice_candidates;
+    //重复变异候选节点容器
     std::vector<MutationCandidate> repeat_candidates;
+    //在进行Splice变异时，从感兴趣的节点树中挑选树的节点加入到Splice变异容器中
+    std::vector<MutationCandidate> splice_candidates;
+    //在进行Insert变异时，从感兴趣的节点树中挑选树的节点加入到Insert变异容器中
+    std::vector<MutationCandidate> insert_candidates;
 
     // creates a list of mutation candidates based on params
     //从给定的节点树选取符合条件的节点加入候选变异节点容器
