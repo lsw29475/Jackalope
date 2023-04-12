@@ -211,7 +211,7 @@ void TestGrammar(char *grammar_path)
 
     PRNG *prng = new MTPRNG();
     // 语法解析完成后从语法中的root符号开始随机生成一个节点树，语法文件变异以节点作为基本单位
-    Grammar::TreeNode *tree = grammar.GenerateTree("term", prng);
+    Grammar::TreeNode *tree = grammar.GenerateTree("root", prng);
     if (!tree)
     {
         printf("Grammar failed to generate sample\n");
