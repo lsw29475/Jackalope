@@ -201,7 +201,7 @@ bool GrammarFuzzer::IsReturnValueInteresting(uint64_t return_value)
     return (return_value == 0);
 }
 
-void TestGrammar(char *grammar_path)
+void TestGrammar(char *grammar_path, char* sample_path)
 {
     // 读取语法
     Grammar grammar;
@@ -223,7 +223,7 @@ void TestGrammar(char *grammar_path)
         grammar.ToString(tree, out);
         printf("Generated sample:\n%s\n", out.c_str());
         grammar.EncodeSample(tree, &sample);
-        sample.Save("grammer_sample");
+        sample.Save(sample_path);
     }
 }
 
@@ -235,7 +235,8 @@ int main(int argc, char **argv)
     if (grammar)
     {
         // 进行语法测试
-        TestGrammar(grammar);
+        char *sample_path = GetOption("-sample_path", argc, argv);
+        TestGrammar(grammar, sample_path);
         return 0;
     }
 
